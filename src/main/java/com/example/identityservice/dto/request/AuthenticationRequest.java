@@ -1,20 +1,15 @@
-package com.example.identityservice.dto.response;
+package com.example.identityservice.dto.request;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-
-import java.time.LocalDate;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class UserResponse {
-    String id;
+public class AuthenticationRequest {
     String username;
     String password;
-    String firstname;
-    String lastname;
-    LocalDate dob;
 }
+// Get username and password for sign in
