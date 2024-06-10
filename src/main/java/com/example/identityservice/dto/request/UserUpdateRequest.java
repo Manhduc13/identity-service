@@ -8,7 +8,6 @@ import java.time.LocalDate;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserUpdateRequest {
     @Size(min = 3, message = "USERNAME_INVALID")

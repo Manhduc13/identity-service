@@ -7,7 +7,8 @@ public enum ErrorCode {
     USERNAME_EXISTED(1001,"Username has been taken"),
     USERNAME_INVALID(1002,"Username must be at least 3 characters"),
     PASSWORD_INVALID(1003,"Password must be at least 6 characters."),
-    USER_NOT_FOUND(1004,"User not found!")
+    USER_NOT_FOUND(1004,"User not found!"),
+    UNAUTHENTICATED(1005, "Unauthenticated")
     ;
     private int code;
     private String message;
