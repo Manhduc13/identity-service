@@ -8,11 +8,13 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 @Entity
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 // @Builder
 public class User {
@@ -24,4 +26,5 @@ public class User {
     String firstname;
     String lastname;
     LocalDate dob;
+    Set<String> roles; // use set instead of list to guarantee all elements in set are unique
 }
