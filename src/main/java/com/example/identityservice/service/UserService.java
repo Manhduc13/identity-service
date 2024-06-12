@@ -13,7 +13,11 @@ import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PostAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -24,6 +28,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@Slf4j
 public class UserService {
 
     UserRepository userRepository;
@@ -47,13 +52,27 @@ public class UserService {
         return userMapper.toUserResponse(userRepository.save(user));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     public List<UserResponse> getUsers(){
+        log.info("In method get all users");
         return userRepository.findAll().stream()
                 .map(userMapper::toUserResponse).toList();
     }
 
+    @PostAuthorize("returnObject.username == authentication.name")
     public UserResponse getUserById(String userId){
+        log.info("In method ger user by Id");
         return userMapper.toUserResponse(userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND)));
+    }
+
+    public UserResponse getMyInfo(){
+        var currentUser = SecurityContextHolder.getContext();
+
+        String name = currentUser.getAuthentication().getName();
+
+        User user = userRepository.findByUsername(name).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        return userMapper.toUserResponse(user);
     }
 
     public UserResponse updateUserById(String userId, @NotNull UserUpdateRequest request){
