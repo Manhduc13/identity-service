@@ -16,7 +16,7 @@ import java.util.Set;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-// @Builder
+
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -26,5 +26,7 @@ public class User {
     String firstname;
     String lastname;
     LocalDate dob;
+
+
     Set<String> roles; // use set instead of list to guarantee all elements in set are unique
 }
