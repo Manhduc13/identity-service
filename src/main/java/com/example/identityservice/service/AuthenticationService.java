@@ -7,6 +7,7 @@ import com.example.identityservice.dto.response.IntrospectResponse;
 import com.example.identityservice.entity.User;
 import com.example.identityservice.exception.AppException;
 import com.example.identityservice.exception.ErrorCode;
+import com.example.identityservice.repository.RoleRepository;
 import com.example.identityservice.repository.UserRepository;
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.MACSigner;
@@ -43,6 +44,7 @@ public class AuthenticationService {
     @NonFinal // Not inject this variable into constructor
     @Value("${jwt.signerKey}")
     protected String SIGNED_KEY;
+    private final RoleRepository roleRepository;
 
     public IntrospectResponse introspect (IntrospectRequest request) throws JOSEException, ParseException {
         var token = request.getToken();
@@ -105,9 +107,13 @@ public class AuthenticationService {
 
     private String buildScope(User user){
         StringJoiner stringJoiner = new StringJoiner(" ");
-//        if(!CollectionUtils.isEmpty(user.getRoles())){
-//            user.getRoles().forEach(stringJoiner::add);
-//        }
+
+        if(!CollectionUtils.isEmpty(user.getRoles())){
+            user.getRoles().forEach(role -> {stringJoiner.add("ROLE_" + role.getName());
+            if(!CollectionUtils.isEmpty(role.getPermissions()))
+                role.getPermissions().forEach(permission -> stringJoiner.add(permission.getName()));
+            });
+        }
         return stringJoiner.toString();
 
         // Use if(!CollectionUtils.isEmpty(user.getRoles())) instead of if(!user.getRoles().isEmpty())
