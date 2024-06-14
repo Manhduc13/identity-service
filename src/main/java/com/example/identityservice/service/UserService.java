@@ -75,27 +75,18 @@ public class UserService {
     public UserResponse updateUserById(String userId, @NotNull UserUpdateRequest request){
         User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-        if(!user.getUsername().equals(request.getUsername()) && userRepository.existsByUsername(request.getUsername())){
-            throw new AppException(ErrorCode.USERNAME_EXISTED);
-        }
-
         request.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        // Update the User object with the new data
         userMapper.updateUser(user, request);
 
         var roles = roleRepository.findAllById(request.getRoles());
         user.setRoles(new HashSet<>(roles));
 
-        // Save the updated User object
-        User updatedUser = userRepository.save(user);
-
-        return userMapper.toUserResponse(updatedUser);
+        return userMapper.toUserResponse(userRepository.save(user));
     }
 
     public void deleteUserById(String userId){
         User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         userRepository.delete(user);
-        //userRepository.deleteById(userId);
     }
 }
