@@ -8,6 +8,7 @@ import com.example.identityservice.enums.Role;
 import com.example.identityservice.exception.AppException;
 import com.example.identityservice.exception.ErrorCode;
 import com.example.identityservice.mapper.UserMapper;
+import com.example.identityservice.repository.RoleRepository;
 import com.example.identityservice.repository.UserRepository;
 import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
@@ -28,7 +29,7 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Slf4j
 public class UserService {
-
+    RoleRepository roleRepository;
     UserRepository userRepository;
     UserMapper userMapper;
     PasswordEncoder passwordEncoder;
@@ -39,19 +40,18 @@ public class UserService {
             throw new AppException(ErrorCode.USERNAME_EXISTED);
         }
 
-        User user = userMapper.toUser(request);
+        User user = userMapper.toUser(request); // map info from request to entity
 
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        HashSet<String> roles = new HashSet<>();
-        roles.add(Role.USER.name());
-        user.setRoles(roles);
+        var roles = roleRepository.findAllById(request.getRoles());
+        user.setRoles(new HashSet<>(roles));
 
         return userMapper.toUserResponse(userRepository.save(user));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    public List<UserResponse> getUsers(){
+    public List<UserResponse> getAll(){
         log.info("In method get all users");
         return userRepository.findAll().stream()
                 .map(userMapper::toUserResponse).toList();
@@ -59,7 +59,6 @@ public class UserService {
 
     @PostAuthorize("returnObject.username == authentication.name")
     public UserResponse getUserById(String userId){
-        log.info("In method ger user by Id");
         return userMapper.toUserResponse(userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND)));
     }
 
@@ -85,6 +84,9 @@ public class UserService {
         // Update the User object with the new data
         userMapper.updateUser(user, request);
 
+        var roles = roleRepository.findAllById(request.getRoles());
+        user.setRoles(new HashSet<>(roles));
+
         // Save the updated User object
         User updatedUser = userRepository.save(user);
 
@@ -93,7 +95,7 @@ public class UserService {
 
     public void deleteUserById(String userId){
         User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-        // userRepository.deleteById(userId);
         userRepository.delete(user);
+        //userRepository.deleteById(userId);
     }
 }
