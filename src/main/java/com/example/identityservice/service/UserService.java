@@ -40,7 +40,7 @@ public class UserService {
             throw new AppException(ErrorCode.USERNAME_EXISTED);
         }
 
-        User user = userMapper.toUser(request); // map info from request to entity
+        User user = userMapper.toUser(request);
 
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
@@ -74,6 +74,10 @@ public class UserService {
 
     public UserResponse updateUserById(String userId, @NotNull UserUpdateRequest request){
         User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        if(!request.getUsername().equals(user.getUsername()) && userRepository.existsByUsername(request.getUsername())){
+            throw new AppException(ErrorCode.USERNAME_EXISTED);
+        }
 
         request.setPassword(passwordEncoder.encode(request.getPassword()));
 
