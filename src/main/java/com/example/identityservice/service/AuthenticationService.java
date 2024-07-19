@@ -49,12 +49,20 @@ public class AuthenticationService {
     @Value("${jwt.signerKey}")
     protected String SIGNED_KEY;
 
+    @NonFinal
+    @Value("${jwt.valid-duration}")
+    protected String VALID_DURATION;
+
+    @NonFinal
+    @Value("${jwt.refreshable-duration}")
+    protected String REFRESHABLE_DURATION;
+
     public IntrospectResponse introspect (IntrospectRequest request) throws JOSEException, ParseException {
         var token = request.getToken();
         boolean isValid = true;
 
         try {
-            verifyToken(token);
+            verifyToken(token, false);
         } catch (AppException e){
             isValid = false;
         }
@@ -82,12 +90,14 @@ public class AuthenticationService {
                 .build();
     }
 
-    private SignedJWT verifyToken(String token) throws JOSEException, ParseException {
+    private SignedJWT verifyToken(String token, boolean isRefresh) throws JOSEException, ParseException {
         JWSVerifier jwsVerifier = new MACVerifier(SIGNED_KEY.getBytes());
 
         SignedJWT signedJWT = SignedJWT.parse(token); // analyze the token
 
-        Date expirationTime = signedJWT.getJWTClaimsSet().getExpirationTime();
+        Date expirationTime = (isRefresh)
+                ? new Date(signedJWT.getJWTClaimsSet().getIssueTime().toInstant().plus(Long.parseLong(REFRESHABLE_DURATION), ChronoUnit.SECONDS).toEpochMilli())
+                : signedJWT.getJWTClaimsSet().getExpirationTime();
 
         var verify = signedJWT.verify(jwsVerifier);
 
@@ -111,7 +121,7 @@ public class AuthenticationService {
                 .issuer("NguyenDucManh") // creator
                 .issueTime(new Date()) // creation time
                 .expirationTime(new Date(
-                        Instant.now().plus(1, ChronoUnit.HOURS).toEpochMilli()
+                        Instant.now().plus(Long.parseLong(VALID_DURATION), ChronoUnit.SECONDS).toEpochMilli()
                 ))
                 .jwtID(UUID.randomUUID().toString())
                 .claim("scope", buildScope(user)) // Custom claim - other elements that we need
@@ -145,20 +155,25 @@ public class AuthenticationService {
         // to avoid NullPointerException.
     }
     public void logout(LogoutRequest request) throws ParseException, JOSEException {
-        var signToken = verifyToken(request.getToken());
-        String jti = signToken.getJWTClaimsSet().getJWTID();
-        Date expirationTime = signToken.getJWTClaimsSet().getExpirationTime();
+        try {
+            var signToken = verifyToken(request.getToken(), true);
+            String jti = signToken.getJWTClaimsSet().getJWTID();
+            Date expirationTime = signToken.getJWTClaimsSet().getExpirationTime();
 
-        InvalidatedToken invalidatedToken = InvalidatedToken.builder()
-                .id(jti)
-                .expirationTime(expirationTime)
-                .build();
+            InvalidatedToken invalidatedToken = InvalidatedToken.builder()
+                    .id(jti)
+                    .expirationTime(expirationTime)
+                    .build();
 
-        invalidatedTokenRepository.save(invalidatedToken);
+            invalidatedTokenRepository.save(invalidatedToken);
+        } catch (AppException e) {
+            log.info("Token already expired");
+        }
+
     }
     public AuthenticationResponse refreshToken (RefreshTokenRequest request) throws ParseException, JOSEException {
         // First, check the validity of token
-        var signJWT = verifyToken(request.getToken());
+        var signJWT = verifyToken(request.getToken(), true);
         var jti = signJWT.getJWTClaimsSet().getJWTID();
         var expirationTime = signJWT.getJWTClaimsSet().getExpirationTime();
 

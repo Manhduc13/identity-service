@@ -18,7 +18,7 @@ public enum ErrorCode {
     DOB_INVALID(1007, HttpStatus.BAD_REQUEST,"Your age must be at least {min}")
     ;
 
-    private int code;
+    private final int code;
     private HttpStatusCode statusCode;
     private String message;
 
