@@ -3,6 +3,7 @@ package com.example.identityservice.service;
 import com.example.identityservice.dto.request.AuthenticationRequest;
 import com.example.identityservice.dto.request.IntrospectRequest;
 import com.example.identityservice.dto.request.LogoutRequest;
+import com.example.identityservice.dto.request.RefreshTokenRequest;
 import com.example.identityservice.dto.response.AuthenticationResponse;
 import com.example.identityservice.dto.response.IntrospectResponse;
 import com.example.identityservice.entity.InvalidatedToken;
@@ -64,6 +65,7 @@ public class AuthenticationService {
     }
     public AuthenticationResponse authenticate (AuthenticationRequest request) {
         PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
+
         var user = userRepository.findByUsername(request.getUsername()).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         // get user info from userRepository
         boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
@@ -153,5 +155,28 @@ public class AuthenticationService {
                 .build();
 
         invalidatedTokenRepository.save(invalidatedToken);
+    }
+    public AuthenticationResponse refreshToken (RefreshTokenRequest request) throws ParseException, JOSEException {
+        // First, check the validity of token
+        var signJWT = verifyToken(request.getToken());
+        var jti = signJWT.getJWTClaimsSet().getJWTID();
+        var expirationTime = signJWT.getJWTClaimsSet().getExpirationTime();
+
+        // Second, logout the current token
+        InvalidatedToken invalidatedToken = InvalidatedToken.builder()
+                .id(jti)
+                .expirationTime(expirationTime)
+                .build();
+        invalidatedTokenRepository.save(invalidatedToken);
+
+        // Third, generate new token for current user
+        var username = signJWT.getJWTClaimsSet().getSubject();
+        var user = userRepository.findByUsername(username).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        var token = generateToken(user);
+
+        return AuthenticationResponse.builder()
+                .authenticated(true)
+                .token(token)
+                .build();
     }
 }
