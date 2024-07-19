@@ -15,7 +15,7 @@ import java.util.Set;
 public class UserCreationRequest {
     @Size(min = 3, message = "USERNAME_INVALID")
     String username;
-    @Size(min = 6, message = "PASSWORD_INVALID")
+    @Size(min = 3, message = "PASSWORD_INVALID")
     String password;
     String firstname;
     String lastname;
