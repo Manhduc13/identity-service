@@ -3,6 +3,7 @@ package com.example.identityservice.controller;
 import com.example.identityservice.dto.request.AuthenticationRequest;
 import com.example.identityservice.dto.request.IntrospectRequest;
 import com.example.identityservice.dto.request.LogoutRequest;
+import com.example.identityservice.dto.request.RefreshTokenRequest;
 import com.example.identityservice.dto.response.ApiResponse;
 import com.example.identityservice.dto.response.AuthenticationResponse;
 import com.example.identityservice.dto.response.IntrospectResponse;
@@ -25,7 +26,7 @@ import java.text.ParseException;
 public class AuthenticationController {
     AuthenticationService authenticationService;
 
-    @PostMapping("/token") // log-in
+    @PostMapping("/signin")
     ApiResponse<AuthenticationResponse> authenticate(@RequestBody AuthenticationRequest request){
         var result = authenticationService.authenticate(request);
         return ApiResponse.<AuthenticationResponse>builder()
@@ -33,7 +34,15 @@ public class AuthenticationController {
                 .build();
     }
 
-    @PostMapping("/introspect")
+    @PostMapping("/refresh")
+    ApiResponse<AuthenticationResponse> refresh(@RequestBody RefreshTokenRequest request) throws ParseException, JOSEException {
+        var result = authenticationService.refreshToken(request);
+        return ApiResponse.<AuthenticationResponse>builder()
+                .result(result)
+                .build();
+    }
+
+    @PostMapping("/introspect") /// verify token
     ApiResponse<IntrospectResponse> introspect(@RequestBody IntrospectRequest request) throws ParseException, JOSEException {
         var result = authenticationService.introspect(request);
         return ApiResponse.<IntrospectResponse>builder()

@@ -57,7 +57,8 @@ public class UserService {
                 .map(userMapper::toUserResponse).toList();
     }
 
-    @PostAuthorize("returnObject.username == authentication.name")
+//    @PostAuthorize("returnObject.username == authentication.name")
+    @PreAuthorize("hasRole('ADMIN')")
     public UserResponse getUserById(String userId){
         return userMapper.toUserResponse(userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND)));
     }

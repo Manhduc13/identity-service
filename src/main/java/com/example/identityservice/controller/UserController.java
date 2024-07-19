@@ -45,7 +45,7 @@ public class UserController {
                 .build();
     }
 
-    @GetMapping("/myinfo")
+    @GetMapping("/myinfo") // get info of current user (or admin)
     ApiResponse<UserResponse> getMyInfo(){
         return ApiResponse.<UserResponse>builder()
                 .result(userService.getMyInfo())
